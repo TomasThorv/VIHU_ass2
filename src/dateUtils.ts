@@ -1,9 +1,9 @@
-import moment from "moment";
+import { add as addDate, isAfter, isBefore, isSameDay as isSameDate, getYear } from "date-fns";
 import { DATE_UNIT_TYPES } from "./constants";
 import { Year, Holiday, Holidays, Unit } from "./types";
 
 export function getCurrentYear(): Year {
-  return moment().year();
+  return getYear(new Date());
 }
 
 export function add(date: Holiday, amount: number, type: Unit = DATE_UNIT_TYPES.DAYS): Holiday {
@@ -13,22 +13,47 @@ export function add(date: Holiday, amount: number, type: Unit = DATE_UNIT_TYPES.
   if (typeof amount !== 'number' || isNaN(amount)) {
     throw new Error('Invalid amount provided');
   }
-  return moment(date).add(amount, type).toDate();
+
+  const duration: Record<string, number> = {};
+  switch (type) {
+    case DATE_UNIT_TYPES.SECONDS:
+      duration.seconds = amount;
+      break;
+    case DATE_UNIT_TYPES.MINUTES:
+      duration.minutes = amount;
+      break;
+    case DATE_UNIT_TYPES.DAYS:
+      duration.days = amount;
+      break;
+    case DATE_UNIT_TYPES.WEEKS:
+      duration.weeks = amount;
+      break;
+    case DATE_UNIT_TYPES.MONTHS:
+      duration.months = amount;
+      break;
+    case DATE_UNIT_TYPES.YEARS:
+      duration.years = amount;
+      break;
+    default:
+      duration.days = amount;
+  }
+
+  return addDate(date, duration as any);
 }
 
 export function isWithinRange(date: Holiday, from: Holiday, to: Holiday): boolean {
-  if (moment(from).isAfter(to)) {
+  if (isAfter(from, to)) {
     throw new Error('Invalid range: from date must be before to date');
   }
-  return moment(date).isBetween(from, to);
+  return isAfter(date, from) && isBefore(date, to);
 }
 
 export function isDateBefore(date: Holiday, compareDate: Holiday): boolean {
-  return moment(date).isBefore(compareDate);
+  return isBefore(date, compareDate);
 }
 
 export function isSameDay(date: Holiday, compareDate: Holiday): boolean {
-  return moment(date).isSame(compareDate, 'day');
+  return isSameDate(date, compareDate);
 }
 
 // Simulates fetching holidays from an API
